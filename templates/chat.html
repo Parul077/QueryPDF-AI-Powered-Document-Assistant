@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QueryPDF | AI Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 h-screen flex flex-col">
+    <nav class="border-b border-slate-800 bg-slate-900/50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="/" class="text-xl font-bold tracking-tighter text-indigo-400">QUERY<span class="text-white">PDF</span></a>
+            <div class="flex gap-8 text-sm font-medium">
+                <a href="/" class="hover:text-indigo-400 transition">Home</a>
+                <a href="/chat_ui" class="text-indigo-400">AI Assistant</a>
+                <a href="/pdf_view" class="hover:text-indigo-400 transition">Catalog</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex-1 flex items-center justify-center p-6">
+        <div class="w-full max-w-3xl bg-slate-800 border border-slate-700 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-slate-700 text-center">
+                <h2 class="text-2xl font-bold">Ask Your <span class="text-indigo-400">Assistant</span></h2>
+                <p class="text-slate-400 text-sm">Inquire about book details or summaries</p>
+            </div>
+
+            <div id="chat-window" class="h-[400px] overflow-y-auto p-6 space-y-4 flex flex-col">
+                <div class="bg-slate-700 p-4 rounded-2xl max-w-[85%] self-start border border-slate-600">
+                    Hello! I'm QueryPDF. I've indexed your library. What can I help you find today?
+                </div>
+            </div>
+
+            <div class="p-6 bg-slate-900/50">
+                <div class="flex gap-2">
+                    <input type="text" id="userInput" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Type your query...">
+                    <button onclick="sendMessage()" class="bg-indigo-600 px-6 py-3 rounded-xl font-bold hover:bg-indigo-500 transition">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const chatWindow = document.getElementById('chat-window');
+    const message = input.value.trim();
+
+    if (!message) return;
+
+    // 1. Add User Message to UI
+    chatWindow.innerHTML += `
+        <div class="bg-indigo-600 p-4 rounded-2xl max-w-[85%] self-end border border-indigo-500 shadow-md">
+            ${message}
+        </div>`;
+
+    input.value = ''; // Clear input
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    try {
+        // 2. Send to Flask Backend
+       const response = await fetch('/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: message }) // 'message' must be the key name
+});
+
+        const data = await response.json();
+
+        // 3. Add AI Response to UI
+        chatWindow.innerHTML += `
+            <div class="bg-slate-700 p-4 rounded-2xl max-w-[85%] self-start border border-slate-600 shadow-md">
+                ${data.answer}
+            </div>`;
+
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Allow "Enter" key to send message
+document.getElementById('userInput').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') sendMessage();
+});
+</script>
+</body>
+</html>
